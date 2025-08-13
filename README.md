@@ -69,6 +69,16 @@ conda env create -f example-environment-dev.yml
 conda activate data-downloader-dev
 ```
 
+#### Why a dev environment and `-e .`?
+- `-e .` means “editable install” (i.e., `pip install -e .`). It installs the package by linking to your local source so changes under `src/data_downloader/` are picked up immediately without reinstalling.
+- Installing the package (editable or not) ensures `import data_downloader` works in tests and examples, because Python sees it as an installed distribution. Without installing, imports may fail unless you tweak `PYTHONPATH`.
+- A dedicated conda env is convenient but not strictly required. You may use any existing environment that meets requirements (Python 3.8+). Simply run:
+  - `pip install -e .`
+  - `pip install pytest`
+  Then run `pytest -q` from the repo root.
+- Consumers should not use `-e .`; they install from a Git tag via `pip install "git+https://github.com/open-AIMS/data-downloader@<tag>"`.
+
+
 ### Running tests
 
 Tests use pytest and download tiny public assets from this repo via GitHub raw URLs.
