@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-downloader"
+version = "1.0.0"
+description = "This package is intended to make downloading datasets for data analysis easier."
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+  { name = "Eric Lawrey", email = "e.lawrey@aims.gov.au" }
+]
+license = { text = "MIT" }
+keywords = ["download", "datasets", "zip", "utility"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/open-AIMS/data-downloader"
+Repository = "https://github.com/open-AIMS/data-downloader"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

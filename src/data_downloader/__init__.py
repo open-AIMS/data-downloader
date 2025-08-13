@@ -1,4 +1,13 @@
-import urllib.request
+"""
+Data Downloader utility.
+
+This package provides the `DataDownloader` class to simplify downloading datasets
+and unzipping archives for data analysis workflows.
+"""
+
+from __future__ import annotations
+
+from typing import List
 import os
 import sys
 import time
@@ -6,17 +15,19 @@ import zipfile
 import tempfile
 import shutil
 import glob
-from typing import List
+import urllib.request
+
+__all__ = ["DataDownloader"]
+__version__ = "1.0.0"
 
 
 class DataDownloader:
     """
-    Prompt Primer: 
     The DataDownloader class provides methods for:
       1. Downloading files from a URL with a progress indicator.
       2. Unzipping downloaded files with optional directory checks and flattening.
       3. Moving/copying only a subset of files from a larger download.
-    
+
     DataDownloader(download_path: str = "data-cache")
     - Creates a downloader object, storing downloaded data in `download_path`.
 
@@ -130,30 +141,6 @@ class DataDownloader:
                     self._reporthook(count, block_size, total_size)
             os.rename(tmp_path, path)
             print("\nDownload complete")
-
-        
-    def dep_download(self, url: str, path: str) -> None:
-        """
-        Downloads a file from the given URL to the specified local path.
-
-        If the target file already exists at the destination path, the function will skip the download.
-        Otherwise, it downloads the file to a temporary location and then moves it to the desired path.
-        During the download, a progress indicator is displayed via the `_reporthook` method.
-
-        :param url: The URL of the file to be downloaded.
-        :param path: The local path (including filename) where the file should be saved.
-        """
-        if os.path.exists(path):
-            print(f"Skipping download of {path}; it already exists")
-        else:
-            print(f"Downloading from {url}")
-            dest_dir = os.path.dirname(path)
-            if not os.path.exists(dest_dir):
-                os.makedirs(dest_dir)
-            tmp_path = path + '.tmp'
-            urllib.request.urlretrieve(url, tmp_path, self._reporthook)
-            os.rename(tmp_path, path)
-            print("Download complete")
 
     def unzip(self, zip_file_path: str, unzip_path: str, path_test: str) -> None:
         """
@@ -287,3 +274,4 @@ class DataDownloader:
                 # Only keep a subset of the files to limit the storage used
                 self.move_files(zip_file_patterns, extract_path, unzip_path)
         # Outside the block, the temporary directory and its contents will be automatically deleted
+

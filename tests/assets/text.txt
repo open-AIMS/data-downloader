@@ -1,0 +1,1 @@
+This is a tiny test asset served from GitHub raw.

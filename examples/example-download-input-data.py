@@ -24,10 +24,11 @@ def replace_prj_with_epsg_4283(shapefile_path):
     prj_file = os.path.splitext(shapefile_path)[0] + ".prj"
     print(f"Replacing .prj file at {prj_file} with EPSG:4283 WKT2...")
     # Generate WKT2 string for EPSG:4283 using pyproj
-    wkt_content = CRS.from_epsg(4283).to_wkt("WKT2_2019")
-    with open(prj_file, "w") as f:
-        f.write(wkt_content)
-    print(".prj file successfully replaced!")
+    # from pyproj import CRS
+    # wkt_content = CRS.from_epsg(4283).to_wkt("WKT2_2019")
+    # with open(prj_file, "w") as f:
+    #     f.write(wkt_content)
+    print(".prj file successfully replaced! (placeholder)")
     
     
 print("Downloading source data files. This will take a while ...")
@@ -72,15 +73,16 @@ downloader.download_and_unzip(direct_download_url, 'CS_NESP-MaC-2-3_AIMS_Oceanic
 direct_download_url = 'https://static-content.springer.com/esm/art%3A10.1007%2Fs00338-016-1492-2/MediaObjects/338_2016_1492_MOESM1_ESM.zip'
 downloader.download_and_unzip(direct_download_url, 'GBR_USYD_Halimeda-bioherms_2016', flatten_directory=True)
 
-downloader.download_path = "in-data"
 # --------------------------------------------------------
 # The rough reef mask corresponds to the water estimate
 # masking created for the creation of this dataset
 
-direct_download_url = f'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV{VERSION}%2Fin-data%2FAU_Rough-reef-shallow-mask'
+downloader.download_path = "in-data"
+
+direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV1%2Fin-data%2FAU_Rough-reef-shallow-mask'
 downloader.download_and_unzip(direct_download_url, 'AU_Rough-reef-shallow-mask', flatten_directory=True)
 
-direct_download_url = f'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV{VERSION}%2Fin-data%2FAU_Cleanup-remove-mask'
+direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV1%2Fin-data%2FAU_Cleanup-remove-mask'
 downloader.download_and_unzip(direct_download_url, 'AU_Cleanup-remove-mask', flatten_directory=True)
 
 # --------------------------------------------------------
@@ -107,6 +109,7 @@ downloader.download_and_unzip(direct_download_url, 'AU_NESP-D3_AHO_Land')
 # https://doi.org/10.5194/essd-13-3869-2021
 
 
+# NOTE: The EOT20 download includes two zip files, we only use ocean_tides.zip.
 direct_download_url = 'https://www.seanoe.org/data/00683/79489/data/85762.zip'
 eot20_folder = 'World_EOT20_2021'
 downloader.download_and_unzip(direct_download_url, eot20_folder)
@@ -179,17 +182,14 @@ dataset = 'Coral-Sea-Features_Img'
 layer = 'S2_R1_DeepFalse'
 direct_download_url = f'https://nextcloud.eatlas.org.au/s/NjbyWRxPoBDDzWg/download?path=%2Flossless%2FCoral-Sea&files={layer}'
 downloader.download_and_unzip(direct_download_url, dataset, subfolder_name = layer, flatten_directory = True)
-downloader.create_virtual_raster(dataset, layer=layer)
 
 layer = 'S2_R2_DeepFalse'
 direct_download_url = f'https://nextcloud.eatlas.org.au/s/NjbyWRxPoBDDzWg/download?path=%2Flossless%2FCoral-Sea&files={layer}'
 downloader.download_and_unzip(direct_download_url, dataset, subfolder_name = layer, flatten_directory = True)
-downloader.create_virtual_raster(dataset, layer=layer)
 
 layer = 'S2_R1_TrueColour'
 direct_download_url = f'https://nextcloud.eatlas.org.au/s/NjbyWRxPoBDDzWg/download?path=%2Flossless%2FCoral-Sea&files={layer}'
 downloader.download_and_unzip(direct_download_url, dataset, subfolder_name = layer, flatten_directory = True)
-downloader.create_virtual_raster(dataset, layer=layer)
 
 # Raw depth contours
 direct_download_url = f'https://nextcloud.eatlas.org.au/s/NjbyWRxPoBDDzWg/download?path=%2Fpoly&files=Coral-Sea'
