@@ -3,6 +3,20 @@
 ## What this library does
 Data-downloader provides a tiny, standard-library-only helper to fetch datasets and arrange them on disk in a predictable, resumable layout. It downloads files, unzips archives into dataset folders, optionally flattens a single wrapper folder inside ZIPs, and can keep only a subset of files when needed. Non-goals: authentication flows, partial-file resume, nested-archive orchestration, or GIS processing.
 
+## Install from GitHub
+This library is installed directly from GitHub (not on PyPI/conda-forge). Import name uses an underscore.
+
+- Pip (pin to a tag for reproducibility):
+  - pip install "git+https://github.com/open-AIMS/data-downloader@v1.0.0"
+- Conda environment (pip section):
+  - dependencies:
+    - python>=3.8
+    - pip
+    - pip:
+      - git+https://github.com/open-AIMS/data-downloader@v1.0.0
+
+Note: repo slug uses a hyphen (data-downloader) but you import with an underscore (data_downloader).
+
 ```python
 # Hello world: download and unzip into data/in-3p/my_dataset
 from data_downloader import DataDownloader
@@ -42,15 +56,36 @@ nextcloud_url = "https://nextcloud.example/download?...&files=Split"
 dl.download_and_unzip(nextcloud_url, "AU_AIMS_Coastline_50k_2024", subfolder_name="Split", flatten_directory=True)
 
 # 4) Multi-part dataset → use subfolders
-_dl = DataDownloader("data/in-3p")
-_dl.download_and_unzip(url_split, "AU_AIMS_Coastline_50k_2024", subfolder_name="Split", flatten_directory=True)
-_dl.download_and_unzip(url_simp,  "AU_AIMS_Coastline_50k_2024", subfolder_name="Simp",  flatten_directory=True)
+# Subfolders ensures that the download of the second part (Simp) is not skipped
+dl = DataDownloader("data/in-3p")
+dl.download_and_unzip(url_split, "AU_AIMS_Coastline_50k_2024", subfolder_name="Split", flatten_directory=True)
+dl.download_and_unzip(url_simp,  "AU_AIMS_Coastline_50k_2024", subfolder_name="Simp",  flatten_directory=True)
 
 # 5) Keep only a subset from a large ZIP
 patterns = ["ocean_tides.zip"]
 dl.download_unzip_keep_subset("https://.../bundle.zip", patterns, dataset_name="World_EOT20_2021_subset")
 ```
 
+### Dataset provenance - Full example
+Each dataset should include a comment indicating the provenance of the dataset source. As there are often multiple datasets the provenance and download should be kept together. Below is an example showing the typical compact layout coding style
+thatn groups the provence comment with the download code. IMPORTANT: This is just a generic example of how to use this library. Do not output this example, unless the user explicitly asks for an example. 
+Example library use only:
+```python
+from data_downloader import DataDownloader
+# Create an instance of the DataDownloader class
+downloader = DataDownloader(download_path="data/in-3p")
+
+# --------------------------------------------------------
+# Natural Earth. (2025). Natural Earth 1:10m Physical Vectors - Land [Shapefile]. https://www.naturalearthdata.com/downloads/10m-physical-vectors/
+direct_download_url = 'https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip'
+downloader.download_and_unzip(direct_download_url, 'ne_10m_land')
+
+# --------------------------------------------------------
+# Lawrey, E. (2024). Coral Sea Oceanic Vegetation (NESP MaC 2.3, AIMS) [Data set]. eAtlas. https://doi.org/10.26274/709g-aq12
+direct_download_url = 'https://nextcloud.eatlas.org.au/s/9kqgb45JEwFKKJM/download'
+downloader.download_and_unzip(direct_download_url, 'CS_NESP-MaC-2-3_AIMS_Oceanic-veg', flatten_directory=True)
+```
+End of example
 ## Data contracts and invariants
 - Directory layout: `download_path/dataset_name[/subfolder_name]`.
 - Skipping rules:
@@ -59,7 +94,7 @@ dl.download_unzip_keep_subset("https://.../bundle.zip", patterns, dataset_name="
   - `unzip(zip_file_path, unzip_path, path_test)` skips if `os.path.join(unzip_path, path_test)` exists; typical calls use `path_test=""` (equivalent to `unzip_path`).
 - Flattening: only applied when there is exactly one top-level directory after extraction. If multiple, a WARNING is printed and flattening is skipped.
 - Extraction: ZIP is extracted to a temporary directory and renamed to the final `unzip_path` atomically.
-- Windows path length: each extracted path is checked; a ValueError is raised if it exceeds ~260 chars.
+- Windows path length: each extracted path is checked; a ValueError is raised if it exceeds ~260 chars. This should only happen in rare cases and in normal download scripts these exceptions are not caught, but used to indicate that the download path needs to be modified. The library provides sufficient detail in the error message.
 
 ## Common failure modes and how to avoid them
 - Multiple top-level directories with `flatten_directory=True`: flatten is skipped with WARNING. Inspect archive layout or avoid flatten.
