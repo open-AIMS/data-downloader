@@ -11,6 +11,8 @@ def test_download_text_file(tmp_download_dir, gh_base_url):
     dd = DataDownloader(download_path=tmp_download_dir)
     url = f"{gh_base_url}/text.txt"
     dest = os.path.join(tmp_download_dir, "text.txt")
+    print(f"DEBUG download URL: {url}")
+    print(f"DEBUG destination: {dest}")
 
     dd.download(url, dest)
 
@@ -23,6 +25,7 @@ def test_download_text_file(tmp_download_dir, gh_base_url):
 def test_download_and_unzip_root_zip(tmp_download_dir, gh_base_url):
     dd = DataDownloader(download_path=tmp_download_dir)
     url = f"{gh_base_url}/file-in-root-folder.zip"
+    print(f"DEBUG download URL: {url}")
 
     dd.download_and_unzip(url, dataset_name="root_zip")
 
@@ -35,6 +38,7 @@ def test_download_and_unzip_root_zip(tmp_download_dir, gh_base_url):
 def test_download_and_unzip_nested_zip_flatten(tmp_download_dir, gh_base_url):
     dd = DataDownloader(download_path=tmp_download_dir)
     url = f"{gh_base_url}/file-in-subfolder.zip"
+    print(f"DEBUG download URL: {url}")
 
     # First extract into dataset folder
     dd.download_and_unzip(url, dataset_name="nested_zip")
@@ -51,6 +55,7 @@ def test_download_and_unzip_nested_zip_flatten(tmp_download_dir, gh_base_url):
 def test_download_unzip_keep_subset(tmp_download_dir, gh_base_url):
     dd = DataDownloader(download_path=tmp_download_dir)
     url = f"{gh_base_url}/file-in-root-folder.zip"
+    print(f"DEBUG download URL: {url}")
 
     dd.download_unzip_keep_subset(url, ["*.txt"], dataset_name="subset_zip")
 

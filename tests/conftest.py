@@ -16,7 +16,12 @@ def gh_base_url():
     Override via GH_ASSETS_BASE_URL to test before a tag exists.
     Default points to a tag placeholder; update after tagging.
     """
-    return os.environ.get(
+    raw = os.environ.get(
         "GH_ASSETS_BASE_URL",
         "https://raw.githubusercontent.com/open-AIMS/data-downloader/v1.0.0/tests/assets",
     )
+    # Remove accidental surrounding quotes and trailing slashes
+    raw = raw.strip()
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in ('"', "'"):
+        raw = raw[1:-1]
+    return raw.rstrip('/')
