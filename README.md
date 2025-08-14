@@ -1,6 +1,6 @@
 # data-downloader
 
-This package is intended to make downloading datasets for data analysis easier.
+Data-downloader is a tiny, no-dependencies helper that standardises how you pull and arrange external datasets for analysis. It saves everything under a single data root so each dataset lives in its own folder, optionally flattens wrapper folders found inside ZIPs, and provides simple patterns to keep only the files you need. The aim is to make data-fetch scripts reproducible, resumable, and easy to extend without re-downloading what you already have.
 
 Features:
 - Download files with a simple progress indicator
@@ -55,6 +55,103 @@ downloader.download_and_unzip(url, dataset_name="my_dataset", flatten_directory=
 
 See `examples/example-download-input-data.py` for a full example script.
 
+## Using the LLM primer with AI assistants
+- Open `LLM_PRIMER.md` at the repo root.
+- Copy the entire file and paste it into your AI chat at the start of the session to prime the model with this library’s purpose, API, invariants, and patterns.
+- Optionally append your project specifics (your `download_path`, dataset and subfolder names, and the URLs you intend to fetch) so generated code matches your layout.
+- Re-paste the primer if the chat resets or after you update the library/version.
+- Don’t paste secrets or credentials; public dataset URLs are fine.
+
+## Applying DataDownloader in common scenarios
+
+### General pattern and idempotency
+- Choose a single data root (e.g., `data/in-3p`). All datasets download underneath this root.
+- One dataset → one folder: `data_root/dataset_name`.
+- Multi-part datasets → subfolders: `data_root/dataset_name/subfolder_name` for each part.
+- Skipping/resume:
+  - `download(url, path)` skips if `path` already exists.
+  - `download_and_unzip(url, dataset, subfolder=None)` skips if the target folder exists:
+    - Without subfolder: skip if `data_root/dataset` exists.
+    - With subfolder: skip if `data_root/dataset/subfolder` exists.
+  - This lets you re-run and expand scripts without re-downloading. Delete the dataset (or subfolder) folder to force a refresh.
+
+### Scenario 1: Simple ZIP → dataset folder
+- When: The ZIP extracts files at the top level (no wrapper folder).
+- Example:
+  ```python
+  downloader.download_and_unzip("https://.../ne_10m_land.zip", "ne_10m_land")
+  ```
+- Result: `data/in-3p/ne_10m_land/*`
+
+### Scenario 2: ZIP has a single wrapper folder → flatten
+- When: The provider wraps files in one top-level folder you don’t need (common with some Nextcloud links).
+- Example:
+  ```python
+  downloader.download_and_unzip(nextcloud_url,
+                                "AU_AIMS_Coastline_50k_2024",
+                                subfolder_name="Split",
+                                flatten_directory=True)
+  ```
+- Behavior:
+  - If exactly one top-level directory exists after extraction, its contents are moved up.
+  - If multiple top-level directories are found, a WARNING is printed and flattening is skipped.
+
+### Scenario 3: One dataset, multiple parts → subfolders (+ optional flatten)
+- When: You want related variants side-by-side (e.g., `Split` and `Simp`).
+- Example:
+  ```python
+  downloader.download_and_unzip(url_split, "AU_AIMS_Coastline_50k_2024", subfolder_name="Split", flatten_directory=True)
+  downloader.download_and_unzip(url_simp,  "AU_AIMS_Coastline_50k_2024", subfolder_name="Simp",  flatten_directory=True)
+  ```
+- Why: `subfolder_name` prevents skipping when the parent dataset folder already exists.
+
+### Scenario 4: Download a single file (no unzip)
+- When: Direct assets like GeoPackage/CSV/NetCDF.
+- Example:
+  ```python
+  dest = os.path.join(downloader.download_path, "AU_ICSM_Gazetteer_2018.gpkg")
+  downloader.download("https://.../PlaceNames.gpkg", dest)
+  ```
+
+### Scenario 5: ZIP contains nested ZIPs or mixed files → add a small post-step
+- When: Bundles like EOT20 include `ocean_tides.zip` and `load_tides.zip` inside the main ZIP.
+- Pattern:
+  ```python
+  downloader.download_and_unzip(eot20_url, "World_EOT20_2021")
+  # Manually unzip only ocean_tides.zip; optionally delete load_tides.zip to save space.
+  ```
+- Note: The downloader doesn’t automatically extract nested archives.
+
+### Organizing your data (one possible convention)
+- A practical split is:
+  - `data/in-3p` for third‑party inputs (eAtlas/GA/Natural Earth/etc.).
+  - `data/in` for project‑specific inputs used in your processing.
+- You can switch mid‑script if needed:
+  ```python
+  downloader.download_path = "data/in"
+  ```
+- This is just one way to organise data. Use what fits your project and publishing workflow.
+
+### Flattening behavior and warnings
+- `flatten_directory` only acts when there’s exactly one top-level directory after extraction.
+- If multiple top-level directories are present, a WARNING is printed and flattening is skipped (often indicates an unexpected package layout).
+- Tip: To decide whether to flatten, first download with a browser and inspect the ZIP’s internal structure.
+
+### When to use something else
+- Resume granularity: This library resumes at the dataset/subfolder level, not mid‑file.
+  - For very large single files where partial‑file resume is critical, consider `curl`/`wget`/`aria2c` or storage SDKs (e.g., `boto3`).
+  - Note: downloads of ~60 GB single files have worked, but there’s no mid‑transfer resume if interrupted.
+- Authenticated or API‑driven sources (e.g., signed URLs, WFS/WCS): use appropriate SDKs/clients (e.g., `boto3`, `requests`, GIS libs).
+- Complex post‑processing (reprojection, format conversion, .prj fixes): use GDAL/pyproj or GIS tooling.
+- Multi‑stage or deeply nested archives beyond simple flattening: add bespoke steps around this library.
+
+### Practical tips
+- Be deliberate with `dataset_name` and `subfolder_name` to keep folders clean and enable correct skip/resume.
+- Use `flatten_directory=True` when you know there’s a single wrapper folder (common with Nextcloud folder downloads).
+- For reproducibility, pin stable URLs/tags and record citations/DOIs in comments next to downloads.
+- If you only need a subset of files from a big ZIP, prefer the subset flow to save disk space.
+- Windows path length: unzip checks for >260 chars and will error; shorten the data root or folder names if needed.
+
 ## License
 MIT. See `LICENSE`.
 
@@ -88,11 +185,14 @@ Tests use pytest and download tiny public assets from this repo via GitHub raw U
 2) Assets: small files live in `tests/assets/` and are referenced via raw URLs.
    - If you change assets, regenerate the zip files locally: `python tests/assets/generate_test_zips.py` and commit the results.
 3) Before a tag exists, point tests at your branch/commit by setting `GH_ASSETS_BASE_URL` to a raw URL, for example:
+   - Anaconda Prompt (Windows cmd):
+     - `set GH_ASSETS_BASE_URL=https://raw.githubusercontent.com/open-AIMS/data-downloader/refs/heads/main/tests/assets`
    - Bash (Windows Git Bash):
-     - `export GH_ASSETS_BASE_URL="https://raw.githubusercontent.com/open-AIMS/data-downloader/<branch-or-commit>/tests/assets"`
+     - `export GH_ASSETS_BASE_URL=https://raw.githubusercontent.com/open-AIMS/data-downloader/<branch-or-commit>/tests/assets`
    - PowerShell:
      - `$env:GH_ASSETS_BASE_URL = "https://raw.githubusercontent.com/open-AIMS/data-downloader/<branch-or-commit>/tests/assets"`
    - After tagging (e.g., v1.0.1), no env var is needed because tests default to `.../v1.0.1/tests/assets` once you update the placeholder.
+   - For the lastest version use `<branch-or-commit>` as `refs/heads/main`
 4) Run tests:
    - `pytest -q`
 
