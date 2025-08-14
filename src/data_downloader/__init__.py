@@ -39,7 +39,8 @@ class DataDownloader:
 
     download_and_unzip(url: str, dataset_name: str, subfolder_name: str = None, flatten_directory: bool = False) -> None
     - Downloads a ZIP from `url` and unpacks into `download_path/dataset_name[/subfolder_name]`.
-    - If `flatten_directory` is True, moves nested files up one level.
+    - If `flatten_directory` is True, and the extracted content contains exactly one top-level
+      directory, its contents are moved up one level (regardless of that directory's name).
 
     move_files(patterns: List[str], source_directory: str, destination_directory: str) -> None
     - Moves files from `source_directory` to `destination_directory`, matching each pattern in `patterns`.
@@ -193,9 +194,9 @@ class DataDownloader:
         :param dataset_name: The name of the dataset (used for directory naming).
         :param subfolder_name: Optional subfolder to differentiate between multiple downloads 
                                for the same dataset.
-        :param flatten_directory: If True, checks if the resulting directory has a subdirectory
-                                  matching the dataset name or subfolder name, and moves its 
-                                  contents up one level.
+        :param flatten_directory: If True, after extraction, if the target directory contains exactly
+                                  one top-level directory, move its contents up one level regardless
+                                  of its name.
         """
         base_path = os.path.join(self.download_path, dataset_name)
         unzip_path = os.path.join(base_path, subfolder_name if subfolder_name else "")
@@ -214,14 +215,24 @@ class DataDownloader:
 
         # Flatten the directory if requested
         if flatten_directory:
-            folder_to_check = os.path.join(unzip_path, subfolder_name if subfolder_name else dataset_name)
-            if os.path.exists(folder_to_check) and os.path.isdir(folder_to_check):
-                print(f"Flattening directory structure for {dataset_name}/{subfolder_name or ''}")
-                for item in os.listdir(folder_to_check):
-                    item_path = os.path.join(folder_to_check, item)
-                    shutil.move(item_path, unzip_path)
-                os.rmdir(folder_to_check)
-                print(f"Flattening complete: {dataset_name}/{subfolder_name or ''}")
+            # New behavior: flatten any single top-level directory regardless of name
+            try:
+                entries = os.listdir(unzip_path)
+            except FileNotFoundError:
+                entries = []
+            # Determine how many top-level directories exist
+            dir_entries = [e for e in entries if os.path.isdir(os.path.join(unzip_path, e))]
+            if len(dir_entries) > 1:
+                print(f"WARNING: flatten_directory requested but found multiple top-level directories in {unzip_path}: {', '.join(sorted(dir_entries))}. Skipping flatten.")
+            elif len(entries) == 1:
+                candidate = os.path.join(unzip_path, entries[0])
+                if os.path.isdir(candidate):
+                    print(f"Flattening directory structure for {dataset_name}/{subfolder_name or ''}")
+                    for item in os.listdir(candidate):
+                        item_path = os.path.join(candidate, item)
+                        shutil.move(item_path, unzip_path)
+                    os.rmdir(candidate)
+                    print(f"Flattening complete: {dataset_name}/{subfolder_name or ''}")
 
     def move_files(self, 
                    patterns: List[str], 
