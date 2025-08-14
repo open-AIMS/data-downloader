@@ -37,6 +37,13 @@ print("Downloading source data files. This will take a while ...")
 # Australian Coastline 50K 2024 (NESP MaC 3.17, AIMS)
 # https://eatlas.org.au/geonetwork/srv/eng/catalog.search#/metadata/c5438e91-20bf-4253-a006-9e9600981c5f
 # Hammerton, M., & Lawrey, E. (2024). Australian Coastline 50K 2024 (NESP MaC 3.17, AIMS) (2nd Ed.) [Data set]. eAtlas. https://doi.org/10.26274/qfy8-hj59
+# Here we download parts of the full datasets and place them into subfolders. We flatten because the original zip contains subfolder
+# `Split` which we don't need because we are putting it in the subfolder `Split`. Without flattening, the files would be in 
+# `Split/Split/` which is not what we want. 
+# If we didn't use subfolder_name, with no flattening then the files would be in `AU_AIMS_Coastline_50k_2024/Split/` which is fine,
+# but when we want to add the Simp version the script would skip the download because it would see that the AU_AIMS_Coastline_50k_2024 
+# folder already exists.
+# The skip checking is done on the dataset name and the subfolder_name.
 direct_download_url = 'https://nextcloud.eatlas.org.au/s/DcGmpS3F5KZjgAG/download?path=%2FV1-1%2F&files=Split'
 downloader.download_and_unzip(direct_download_url, 'AU_AIMS_Coastline_50k_2024', subfolder_name='Split', flatten_directory=True)
 
@@ -76,8 +83,10 @@ downloader.download_and_unzip(direct_download_url, 'GBR_USYD_Halimeda-bioherms_2
 # --------------------------------------------------------
 # The rough reef mask corresponds to the water estimate
 # masking created for the creation of this dataset
-
-downloader.download_path = "in-data"
+# Switch to a different download path
+# By convention we use `data/in` for input data that is new data associated with the datasets being created
+# and we use `data/in-3p` for input data that is used in the 3rd party datasets.
+downloader.download_path = "data/in"
 
 direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV1%2Fin-data%2FAU_Rough-reef-shallow-mask'
 downloader.download_and_unzip(direct_download_url, 'AU_Rough-reef-shallow-mask', flatten_directory=True)
@@ -109,7 +118,7 @@ downloader.download_and_unzip(direct_download_url, 'AU_NESP-D3_AHO_Land')
 # https://doi.org/10.5194/essd-13-3869-2021
 
 
-# NOTE: The EOT20 download includes two zip files, we only use ocean_tides.zip.
+# NOTE: The EOT20 download includes two zip files inside the downloaded zipfile, we only use ocean_tides.zip.
 direct_download_url = 'https://www.seanoe.org/data/00683/79489/data/85762.zip'
 eot20_folder = 'World_EOT20_2021'
 downloader.download_and_unzip(direct_download_url, eot20_folder)
@@ -126,7 +135,7 @@ if os.path.exists(ocean_tides_folder):
 else:
     unzip_file(ocean_tides_zip, base_path)
 
-# Remove load_tides.zip as we don't use it in the simulation
+# Remove load_tides.zip as we don't use it in the simulation. Do this to save space.
 if os.path.exists(load_tides_zip):
     print(f"Removing {load_tides_zip}...")
     os.remove(load_tides_zip)
@@ -138,9 +147,10 @@ print("All files are downloaded and prepared.")
 # Tide Gauge Monthly Stats Data
 # Source: http://www.bom.gov.au/oceanography/projects/abslmp/data/monthly.shtml
 # http://www.bom.gov.au/oceanography/projects/ntc/monthly/
+# In this example we are downloading a bunch of files specified from a CSV file.
 
 # Path to the CSV file containing tide gauge data
-tide_gauges_csv = "data/in/BOM_tide-gauges.csv"
+tide_gauges_csv = "data/BOM_tide-gauges.csv"
 
 # Define the destination folder for the tide gauge monthly stats
 tide_stats_folder = os.path.join(downloader.download_path, "AU_BOM_Monthly-tide-stats")
