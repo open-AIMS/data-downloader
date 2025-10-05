@@ -65,6 +65,26 @@ dl.download_and_unzip(url_simp,  "AU_AIMS_Coastline_50k_2024", subfolder_name="S
 patterns = ["ocean_tides.zip"]
 dl.download_unzip_keep_subset("https://.../bundle.zip", patterns, dataset_name="World_EOT20_2021_subset")
 ```
+## Console output and progress
+The library uses plain print statements (no logging framework). Typical messages:
+- Start of a download: `Downloading from <URL>`
+- Periodic progress (about once per second) showing bytes transferred and basic rate (exact format may vary by Python version / platform). If total size is known (Content-Length header), a percentage is included; otherwise only bytes downloaded are shown.
+- Completion: `Download complete`
+- Unzip start: `Unzipping <zip_temp_path> to <target_dir>`
+- Flatten (when applied): 
+  - `Flattening directory structure for <dataset>/<subfolder>` then
+  - `Flattening complete: <dataset>/<subfolder>`
+- Flatten skipped (multiple top-level dirs): 
+  - `WARNING: flatten_directory requested but found multiple top-level directories in <target_dir>: dirA, dirB. Skipping flatten.`
+- Skip (idempotency trigger):
+  - File download skipped if destination file already exists (silent or a short note depending on method version).
+  - ZIP download/unzip skipped if the target dataset (or dataset/subfolder) directory already exists.
+- Path length issue (Windows): raises ValueError with a message describing the offending path.
+
+Notes:
+- Output is intended for human feedback; do not parse it programmatically.
+- No retry/backoff messages: a transient network failure will raise an exception; rerun the script to resume at the dataset/subfolder level.
+- Progress granularity is coarse (once per second) to stay lightweight.
 
 ### Dataset provenance - Full example
 Each dataset should include a comment indicating the provenance of the dataset source. As there are often multiple datasets the provenance and download should be kept together. Below is an example showing the typical compact layout coding style
