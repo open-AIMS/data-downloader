@@ -19,7 +19,7 @@ dependencies:
   - python>=3.8
   - pip
   - pip:
-      - git+https://github.com/open-AIMS/data-downloader@v1.0.0  # pin a tag for reproducibility
+      - git+https://github.com/open-AIMS/data-downloader@v1.1.0  # pin a tag for reproducibility
 ```
 
 Alternatively, see `example-environment-consumer.yml` in this repo for a ready-made template.
@@ -27,17 +27,17 @@ Alternatively, see `example-environment-consumer.yml` in this repo for a ready-m
 If you prefer, you can also install directly into an existing environment:
 
 ```
-pip install "git+https://github.com/open-AIMS/data-downloader@v1.0.0"
+pip install "git+https://github.com/open-AIMS/data-downloader@v1.1.0"
 ```
 
-Note: Replace `v1.0.0` with the tag or commit you want to pin.
+Note: Replace `v1.1.0` with the tag or commit you want to pin.
 
 ## Pin to a tag or commit
 To create and push a tag for releases:
 
 ```
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.1.0
+git push origin v1.1.0
 ```
 
 ## Supported Python versions
@@ -150,7 +150,10 @@ See `examples/example-download-input-data.py` for a full example script.
 - Use `flatten_directory=True` when you know there’s a single wrapper folder (common with Nextcloud folder downloads).
 - For reproducibility, pin stable URLs/tags and record citations/DOIs in comments next to downloads.
 - If you only need a subset of files from a big ZIP, prefer the subset flow to save disk space.
-- Windows path length: unzip checks for >260 chars and will error; shorten the data root or folder names if needed.
+- Windows path length: when using `flatten_directory=True`, extraction and flattening happen entirely in the system temp directory (short path), so intermediate paths never exceed the Windows 260-char limit. When not flattening, `unzip` will raise a `ValueError` if any extracted path exceeds 260 chars — shorten the data root or folder names if this occurs.
+
+## Changelog
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## License
 MIT. See `LICENSE`.
@@ -161,7 +164,7 @@ Create a local development environment that installs this package in editable mo
 
 See `example-environment-dev.yml` and run:
 
-```
+```bash
 conda env create -f example-environment-dev.yml
 conda activate data-downloader-dev
 ```
@@ -180,7 +183,7 @@ conda activate data-downloader-dev
 
 Tests use pytest and download tiny public assets from this repo via GitHub raw URLs.
 
-1) Install pytest (if not already):
+1) Install pytest (it is installed as part of the `example-environment-dev.yml`):
    - `conda install pytest` or `pip install pytest`
 2) Assets: small files live in `tests/assets/` and are referenced via raw URLs.
    - If you change assets, regenerate the zip files locally: `python tests/assets/generate_test_zips.py` and commit the results.
@@ -188,10 +191,10 @@ Tests use pytest and download tiny public assets from this repo via GitHub raw U
    - Anaconda Prompt (Windows cmd):
      - `set GH_ASSETS_BASE_URL=https://raw.githubusercontent.com/open-AIMS/data-downloader/refs/heads/main/tests/assets`
    - Bash (Windows Git Bash):
-     - `export GH_ASSETS_BASE_URL=https://raw.githubusercontent.com/open-AIMS/data-downloader/<branch-or-commit>/tests/assets`
+     - `export GH_ASSETS_BASE_URL=https://raw.githubusercontent.com/open-AIMS/data-downloader/refs/heads/main/tests/assets`
    - PowerShell:
-     - `$env:GH_ASSETS_BASE_URL = "https://raw.githubusercontent.com/open-AIMS/data-downloader/<branch-or-commit>/tests/assets"`
-   - After tagging (e.g., v1.0.1), no env var is needed because tests default to `.../v1.0.1/tests/assets` once you update the placeholder.
+     - `$env:GH_ASSETS_BASE_URL = "https://raw.githubusercontent.com/open-AIMS/data-downloader/refs/heads/main/tests/assets"`
+   - After tagging (e.g., v1.1.0), update the default URL in `tests/conftest.py` from `refs/heads/main` to the new tag (e.g., `v1.1.0/tests/assets`) so the tag becomes the stable default.
    - For the lastest version use `<branch-or-commit>` as `refs/heads/main`
 4) Run tests:
    - `pytest -q`
@@ -206,20 +209,20 @@ What does `@v1.0.0` mean?
 - It refers to a Git tag named `v1.0.0` on this repository. Consumers pin to that tag to get a reproducible version.
 
 Steps to cut a new release (SemVer: MAJOR.MINOR.PATCH):
-1) Choose the new version (e.g., 1.0.1) and update it in both places:
+1) Choose the new version (e.g., 1.1.0) and update it in both places:
    - `pyproject.toml`: `[project].version`
    - `src/data_downloader/__init__.py`: `__version__`
 2) Commit the changes on the default branch (e.g., main):
    - `git add pyproject.toml src/data_downloader/__init__.py`
-   - `git commit -m "Bump version to 1.0.1"`
+   - `git commit -m "Bump version to 1.1.0"`
 3) Create an annotated tag and push it:
-   - `git tag -a v1.0.1 -m "Release v1.0.1"`
+   - `git tag -a v1.1.0 -m "Release v1.1.0"`
    - `git push origin main`
-   - `git push origin v1.0.1`
+   - `git push origin v1.1.0`
 4) Consumers can now install this exact version:
-   - `pip install "git+https://github.com/open-AIMS/data-downloader@v1.0.1"`
+   - `pip install "git+https://github.com/open-AIMS/data-downloader@v1.1.0"`
    - Or include the same line under `pip:` in their `environment.yml`.
-5) Optional: Create a GitHub Release for `v1.0.1` in the web UI and add release notes.
+5) Optional: Create a GitHub Release for `v1.1.0` in the web UI and add release notes.
 
 Fixing a mistaken tag (if needed):
 - Delete local tag: `git tag -d v1.0.1`

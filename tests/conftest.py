@@ -18,7 +18,7 @@ def gh_base_url():
     """
     raw = os.environ.get(
         "GH_ASSETS_BASE_URL",
-        "https://raw.githubusercontent.com/open-AIMS/data-downloader/v1.0.0/tests/assets",
+        "https://raw.githubusercontent.com/open-AIMS/data-downloader/v1.1.0/tests/assets",
     )
     # Remove accidental surrounding quotes and trailing slashes
     raw = raw.strip()

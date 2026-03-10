@@ -18,7 +18,7 @@ import glob
 import urllib.request
 
 __all__ = ["DataDownloader"]
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class DataDownloader:
@@ -204,35 +204,58 @@ class DataDownloader:
 
         if os.path.exists(unzip_path):
             print(f"Skipping {dataset_name}/{subfolder_name or ''} as unzip path exists: {unzip_path}")
+            return
+
+        if flatten_directory:
+            # Extract and flatten inside the system temp directory (short path) to
+            # avoid the Windows 260-char path limit. The intermediate paths during
+            # extraction include the zip's internal folder structure plus the _tmp
+            # suffix, which can push paths over the limit even when the final
+            # flattened paths would be fine.
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Download the ZIP file
+                zip_file_path = os.path.join(temp_dir, f"{dataset_name}.zip")
+                self.download(url, zip_file_path)
+
+                # Extract into the short temp directory
+                extract_path = os.path.join(temp_dir, "extract")
+                self.unzip(zip_file_path, extract_path, "")
+
+                # Flatten: if there's exactly one top-level directory, move its
+                # contents up one level
+                try:
+                    entries = os.listdir(extract_path)
+                except FileNotFoundError:
+                    entries = []
+
+                dir_entries = [e for e in entries if os.path.isdir(os.path.join(extract_path, e))]
+                if len(dir_entries) > 1:
+                    print(f"WARNING: flatten_directory requested but found multiple "
+                          f"top-level directories in {extract_path}: "
+                          f"{', '.join(sorted(dir_entries))}. Skipping flatten.")
+                elif len(entries) == 1:
+                    candidate = os.path.join(extract_path, entries[0])
+                    if os.path.isdir(candidate):
+                        print(f"Flattening directory structure for {dataset_name}/{subfolder_name or ''}")
+                        for item in os.listdir(candidate):
+                            item_path = os.path.join(candidate, item)
+                            shutil.move(item_path, extract_path)
+                        os.rmdir(candidate)
+                        print(f"Flattening complete: {dataset_name}/{subfolder_name or ''}")
+
+                # Move the (now flattened) result to the final destination
+                parent_dir = os.path.dirname(os.path.normpath(unzip_path))
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+                shutil.move(extract_path, unzip_path)
         else:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Download the ZIP file
                 zip_file_path = os.path.join(temp_dir, f"{dataset_name}.zip")
                 self.download(url, zip_file_path)
 
-                # Unzip the file
+                # Unzip the file directly to the final destination
                 self.unzip(zip_file_path, unzip_path, "")
-
-        # Flatten the directory if requested
-        if flatten_directory:
-            # New behavior: flatten any single top-level directory regardless of name
-            try:
-                entries = os.listdir(unzip_path)
-            except FileNotFoundError:
-                entries = []
-            # Determine how many top-level directories exist
-            dir_entries = [e for e in entries if os.path.isdir(os.path.join(unzip_path, e))]
-            if len(dir_entries) > 1:
-                print(f"WARNING: flatten_directory requested but found multiple top-level directories in {unzip_path}: {', '.join(sorted(dir_entries))}. Skipping flatten.")
-            elif len(entries) == 1:
-                candidate = os.path.join(unzip_path, entries[0])
-                if os.path.isdir(candidate):
-                    print(f"Flattening directory structure for {dataset_name}/{subfolder_name or ''}")
-                    for item in os.listdir(candidate):
-                        item_path = os.path.join(candidate, item)
-                        shutil.move(item_path, unzip_path)
-                    os.rmdir(candidate)
-                    print(f"Flattening complete: {dataset_name}/{subfolder_name or ''}")
 
     def move_files(self, 
                    patterns: List[str], 
