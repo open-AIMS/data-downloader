@@ -7,13 +7,13 @@ Data-downloader provides a tiny, standard-library-only helper to fetch datasets 
 This library is installed directly from GitHub (not on PyPI/conda-forge). Import name uses an underscore.
 
 - Pip (pin to a tag for reproducibility):
-  - pip install "git+https://github.com/open-AIMS/data-downloader@v1.0.0"
+  - pip install "git+https://github.com/open-AIMS/data-downloader@v1.1.0"
 - Conda environment (pip section):
   - dependencies:
     - python>=3.8
     - pip
     - pip:
-      - git+https://github.com/open-AIMS/data-downloader@v1.0.0
+      - git+https://github.com/open-AIMS/data-downloader@v1.1.0
 
 Note: repo slug uses a hyphen (data-downloader) but you import with an underscore (data_downloader).
 
